@@ -1,0 +1,35 @@
+@startuml
+
+entity "Aries\nAgent" as agent
+
+box "Fabric" #Aquamarine
+    entity "Chaincode" as cc
+end box
+
+note across: ws: worldstate
+
+agent -> cc: req: SignedLedgerRequest
+activate cc
+
+== authenticate request ==
+cc -> cc: verkey = ws.GetState(req.Identifier)
+cc -> cc: valid = verify(verkye, req, req.Signature)
+alt#Aqua valid == false
+    cc-> agent: "invalid signature"
+else valid == true
+    == write transaction ==
+    cc-> cc: txType = getTxType(req.Operation)
+
+    alt txType == NYM_TX_TYPE
+        cc-> cc: nymTransaction(caller, req.operation)
+    end
+    alt txType == SCHEMA_TX_TYPE
+        cc-> cc: schemaTransaction(caller, req.operation)
+    end
+    alt txType == CRED_DEF_TX_TYPE
+        cc-> cc: credentialDefinitionTransaction(caller, req.operation)
+    end
+end
+
+
+@enduml
