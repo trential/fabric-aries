@@ -1,0 +1,171 @@
+version: '2.1'
+
+
+networks:
+  aries_fabric:
+      external: true
+
+volumes:
+  ca_org1:
+  ca_org2:
+  orderer.example.com:
+  peer0.org1.example.com:
+  peer0.org2.example.com:
+
+services:
+  orderer.example.com:
+    image:  hyperledger/fabric-orderer:2.2
+    container_name: orderer.example.com
+    environment:
+      - FABRIC_LOGGING_SPEC=INFO
+      - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
+      - ORDERER_GENERAL_LISTENPORT=7050
+      - ORDERER_GENERAL_GENESISMETHOD=file
+      - ORDERER_GENERAL_GENESISFILE=/artifacts/genesis.block
+      - ORDERER_GENERAL_LOCALMSPID=OrdererMSP
+      - ORDERER_GENERAL_LOCALMSPDIR=/crypto/msp
+      - ORDERER_OPERATIONS_LISTENADDRESS=orderer.example.com:9443
+      # enabled TLS
+      - ORDERER_GENERAL_TLS_ENABLED=true
+      - ORDERER_GENERAL_TLS_PRIVATEKEY=/crypto/tls/server.key
+      - ORDERER_GENERAL_TLS_CERTIFICATE=/crypto/tls/server.crt
+      - ORDERER_GENERAL_TLS_ROOTCAS=[/crypto/tls/ca.crt]
+      - ORDERER_KAFKA_TOPIC_REPLICATIONFACTOR=1
+      - ORDERER_KAFKA_VERBOSE=true
+      - ORDERER_GENERAL_CLUSTER_CLIENTCERTIFICATE=/crypto/tls/server.crt
+      - ORDERER_GENERAL_CLUSTER_CLIENTPRIVATEKEY=/crypto/tls/server.key
+      - ORDERER_GENERAL_CLUSTER_ROOTCAS=[/crypto/tls/ca.crt]
+    networks:
+      - aries_fabric
+    ports:
+      - 7050:7050
+    volumes:
+      - ./organizations/ordererOrganizations/example.com/orderers/orderer.example.com:/crypto
+      - ./artifacts:/artifacts
+      - orderer.example.com:/var/hyperledger/production/orderer
+
+  ca_org1:
+    image: hyperledger/fabric-ca:1.5.3
+    container_name: ca_org1
+    environment:
+      - FABRIC_CA_SERVER_CA_NAME=ca_org1
+    ports:
+      - 7054:7054
+    volumes:
+      - ./organizations/peerOrganizations/org1.example.com/ca:/crypto
+      - ca_org1:/etc/hyperledger/fabric-ca-server
+    command: sh -c 'fabric-ca-server start -b admin:adminpw --ca.certfile /crypto/ca.org1.example.com-cert.pem --ca.keyfile /crypto/priv_sk'
+    networks:
+      - aries_fabric
+
+  peer0.org1.example.com:
+    image: hyperledger/fabric-peer:2.2
+    container_name: peer0.org1.example.com
+    environment:
+      #Generic peer variables
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=aries_fabric
+      - FABRIC_LOGGING_SPEC=INFO
+      #- FABRIC_LOGGING_SPEC=DEBUG
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_PROFILE_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/crypto/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/crypto/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/crypto/tls/ca.crt
+      - CORE_PEER_MSPCONFIGPATH=/crypto/msp
+      # Peer specific variabes
+      - CORE_PEER_ID=peer0.org1.example.com
+      - CORE_PEER_ADDRESS=peer0.org1.example.com:7051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:7051
+      - CORE_PEER_CHAINCODEADDRESS=peer0.org1.example.com:7052
+      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:7052
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.example.com:7051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org1.example.com:7051
+      - CORE_PEER_LOCALMSPID=Org1MSP
+      - CORE_OPERATIONS_LISTENADDRESS=peer0.org1.example.com:9444
+      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB # 
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin # 
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=adminpw # 
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb1:5984 #
+    ports:
+      - 7051:7051
+    volumes:
+      - /var/run/docker.sock:/host/var/run/docker.sock
+      - ./organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com:/crypto
+      - peer0.org1.example.com:/var/hyperledger/production
+    networks:
+      - aries_fabric
+
+  couchdb1:
+    container_name: couchdb1
+    image: couchdb:3.1.1
+    networks: 
+      - aries_fabric
+    ports: 
+      - 5984:5984
+    environment: 
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=adminpw
+
+  ca_org2:
+    image: hyperledger/fabric-ca:1.5.3
+    container_name: ca_org2
+    environment:
+      - FABRIC_CA_SERVER_CA_NAME=ca_org2
+    ports:
+      - 8054:7054
+    volumes:
+      - ./organizations/peerOrganizations/org2.example.com/ca:/crypto
+      - ca_org2:/etc/hyperledger/fabric-ca-server
+    command: sh -c 'fabric-ca-server start -b admin:adminpw --ca.certfile /crypto/ca.org2.example.com-cert.pem --ca.keyfile /crypto/priv_sk'
+    networks:
+      - aries_fabric
+
+  peer0.org2.example.com:
+    image: hyperledger/fabric-peer:2.2
+    container_name: peer0.org2.example.com
+    environment:
+      #Generic peer variables
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=aries_fabric
+      - FABRIC_LOGGING_SPEC=INFO
+      #- FABRIC_LOGGING_SPEC=DEBUG
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_PROFILE_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/crypto/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/crypto/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/crypto/tls/ca.crt
+      - CORE_PEER_MSPCONFIGPATH=/crypto/msp
+      # Peer specific variabes
+      - CORE_PEER_ID=peer0.org2.example.com
+      - CORE_PEER_ADDRESS=peer0.org2.example.com:8051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:8051
+      - CORE_PEER_CHAINCODEADDRESS=peer0.org2.example.com:8052
+      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:8052
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org2.example.com:8051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org2.example.com:8051
+      - CORE_PEER_LOCALMSPID=Org2MSP
+      - CORE_OPERATIONS_LISTENADDRESS=peer0.org2.example.com:9444
+      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB # 
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin # 
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=adminpw # 
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb2:5984 #
+    ports:
+      - 8051:8051
+    volumes:
+      - /var/run/docker.sock:/host/var/run/docker.sock
+      - ./organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com:/crypto
+      - peer0.org2.example.com:/var/hyperledger/production
+    networks:
+      - aries_fabric
+      
+  couchdb2:
+    container_name: couchdb2
+    image: couchdb:3.1.1
+    networks: 
+      - aries_fabric
+    ports: 
+      - 6984:5984
+    environment: 
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=adminpw
