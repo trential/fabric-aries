@@ -3,19 +3,12 @@ package utils
 import (
 	"crypto/ed25519"
 	"encoding/json"
-	"hash/fnv"
 	"reflect"
 	"sort"
 	"strings"
 
 	"github.com/btcsuite/btcutil/base58"
 )
-
-func Hash32(msg string) uint32 {
-	h := fnv.New32()
-	h.Write([]byte(msg))
-	return h.Sum32()
-}
 
 func VerifyRequest(verKey, message, signature string) bool {
 	pub := ed25519.PublicKey(base58.Decode(verKey))

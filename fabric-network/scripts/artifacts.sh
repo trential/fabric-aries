@@ -1,6 +1,8 @@
 # /bin/sh
 . ./scripts/env.sh
 
+export FABRIC_CFG_PATH=${PWD}
+
 cryptogen generate --output organizations --config crypto-config.yaml
 
 # Generate system channel

@@ -65,13 +65,26 @@ func (SSIChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	case "read":
 		op = READ_RESPONSE_TYPE
 		if len(args) != 1 {
-			err = fmt.Errorf("%w: require one argument(txID)", ErrInvalidRequest)
+			err = fmt.Errorf("%w: require one argument(readLedgerRequest)", ErrInvalidRequest)
 			break
 		}
-		id := args[0]
-		logger.Debug("get transaction type from id")
-		txType = getTxTypeFromID(id)
-		data, err = read(stub, id)
+		logger.Debug("unmarshal ReadRequest")
+		var req ReadRequest
+		err = json.Unmarshal([]byte(args[0]), &req)
+		if err != nil {
+			err = fmt.Errorf("%w: invalid read request: %v", ErrInvalidRequest, err)
+			break
+		}
+		logger.Debug("get tx type of read request")
+		txType, err = getTxType(string(req.Type))
+		if err != nil {
+			break
+		}
+		if req.Operation == nil {
+			err = fmt.Errorf("%w: operation is empty", ErrInvalidRequest)
+			break
+		}
+		data, err = read(stub, txType, req.Operation)
 	case "write":
 		op = WRITE_RESPONSE_TYPE
 		if len(args) != 1 {
@@ -92,8 +105,12 @@ func (SSIChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		if err != nil {
 			break
 		}
+		if req.Operation == nil {
+			err = fmt.Errorf("%w: operation is empty", ErrInvalidRequest)
+			break
+		}
 		logger.Debug("get tx type from operations")
-		txType, err = getTxType(req.Operation)
+		txType, err = getTxType(req.Operation["type"])
 		if err != nil {
 			break
 		}
@@ -135,20 +152,22 @@ func write(stub shim.ChaincodeStubInterface, txType TX_TYPE, caller *Nym, operat
 		data, err = handleSchemaTx(stub, caller, operation)
 	case CRED_DEF_TX:
 		data, err = handleCredentialDefinitionTx(stub, caller, operation)
+	default:
+		err = fmt.Errorf("%w: tx type not supported", ErrInvalidRequest)
 	}
 	return data, err
 }
 
-func read(stub shim.ChaincodeStubInterface, id string) (interface{}, error) {
-	logger.Debugf("read transaction id: %s", id)
-	raw, err := stub.GetState(id)
-	if err != nil {
-		return nil, ErrWorldstateRead
+func read(stub shim.ChaincodeStubInterface, txType TX_TYPE, operation map[string]interface{}) (interface{}, error) {
+	var data interface{}
+	var err error
+	switch txType {
+	case READ_NYM_TX, READ_SCHEMA_TX, READ_CRED_DEF_TX:
+		data, err = handleReadIDRequest(stub, operation)
+	default:
+		err = fmt.Errorf("%w: tx type not supported", ErrInvalidRequest)
 	}
-	if len(raw) == 0 {
-		return nil, ErrStateNotFound
-	}
-	var data map[string]interface{}
-	json.Unmarshal(raw, &data)
-	return data, nil
+
+	return data, err
+
 }

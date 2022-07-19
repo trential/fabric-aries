@@ -119,7 +119,6 @@ func handleCreateSchemaTx(stub shim.ChaincodeStubInterface, caller *Nym, req *Sc
 		Name:      req.Data.Name,
 		Version:   req.Data.Version,
 		Ver:       "1.0",
-		SeqNo:     utils.Hash32(id),
 	}
 	logger.Debugf("%s: storing schema transaction in worldstate", fnTag)
 	raw, _ := json.Marshal(schema)
@@ -202,6 +201,27 @@ func handleUpdateCredentialDefinitionTx(stub shim.ChaincodeStubInterface, caller
 
 }
 
+func handleReadIDRequest(stub shim.ChaincodeStubInterface, operation map[string]interface{}) (interface{}, error) {
+	var req ReadIDRequest
+	err := req.from(operation)
+	if err != nil {
+		return nil, err
+	}
+	logger.Debugf(`
+	handleReadIDRequest:
+							id=%s`, req.ID)
+	raw, err := stub.GetState(req.id())
+	if err != nil {
+		return nil, fmt.Errorf("%w: read transaction", ErrWorldstateRead)
+	}
+	if len(raw) == 0 {
+		return nil, fmt.Errorf("%w: transaction not found", ErrStateNotFound)
+	}
+	var out interface{}
+	json.Unmarshal(raw, &out)
+	return out, nil
+}
+
 // authenticate: authenticate the caller and returns it
 func authenticate(stub shim.ChaincodeStubInterface, req Request, reqMsg string) (*Nym, error) {
 	// get caller did
@@ -222,17 +242,21 @@ func authenticate(stub shim.ChaincodeStubInterface, req Request, reqMsg string) 
 	return &nym, nil
 }
 
-func getTxType(operations map[string]interface{}) (TX_TYPE, error) {
-	t, ok := operations["type"]
-	if !ok {
+func getTxType(typ interface{}) (TX_TYPE, error) {
+	if typ == nil {
 		return TX_TYPE(""), fmt.Errorf("%w: tx type not provided", ErrInvalidRequest)
 	}
-	tp, ok := t.(string)
+	tp, ok := typ.(string)
 	if !ok {
 		return TX_TYPE(""), fmt.Errorf("%w: invalid tx type", ErrInvalidRequest)
 	}
 	txp := TX_TYPE(tp)
-	if !(txp == NYM_TX || txp == SCHEMA_TX || txp == CRED_DEF_TX) {
+	if !(txp == NYM_TX ||
+		txp == SCHEMA_TX ||
+		txp == CRED_DEF_TX ||
+		txp == READ_NYM_TX || // read transactions
+		txp == READ_SCHEMA_TX ||
+		txp == READ_CRED_DEF_TX) {
 		return txp, fmt.Errorf("%w: tx type not supported", ErrInvalidRequest)
 	}
 	return txp, nil

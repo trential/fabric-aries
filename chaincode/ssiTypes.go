@@ -28,7 +28,6 @@ type Schema struct {
 	Name      string   `json:"name"`
 	Version   string   `json:"version"`
 	Ver       string   `json:"ver"`
-	SeqNo     uint32   `json:"seqNo"`
 }
 
 // Credential definition

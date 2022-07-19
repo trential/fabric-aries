@@ -1,7 +1,6 @@
 package main
 
 import (
-	"chaincode/utils"
 	"encoding/json"
 	"fmt"
 )
@@ -20,6 +19,17 @@ type Request struct {
 	Identifier string                 `json:"identifier"`
 	Operation  map[string]interface{} `json:"operation"`
 	Signature  string                 `json:"signature"`
+}
+
+const (
+	READ_NYM_TX      TX_TYPE = "99"
+	READ_SCHEMA_TX   TX_TYPE = "201"
+	READ_CRED_DEF_TX TX_TYPE = "202"
+)
+
+type ReadRequest struct {
+	Type      TX_TYPE                `json:"type"`
+	Operation map[string]interface{} `json:"operation"`
 }
 
 type NYM_ROLE_REQ string
@@ -156,5 +166,28 @@ func (r *CredentialDefinitionRequest) from(operation map[string]interface{}) err
 }
 
 func (r *CredentialDefinitionRequest) id(caller string) string {
-	return fmt.Sprintf("%s:3:%s:%d:%s", caller, r.SignatureType, utils.Hash32(r.SchemaID), r.Tag)
+	return fmt.Sprintf("%s:3:%s:%s:%s", caller, r.SignatureType, r.SchemaID, r.Tag)
+}
+
+//
+type ReadIDRequest struct {
+	ID string `json:"id"`
+}
+
+func (r *ReadIDRequest) from(operation map[string]interface{}) error {
+	raw, _ := json.Marshal(operation)
+	err := json.Unmarshal(raw, r)
+	if err != nil {
+		return err
+	}
+
+	if r.ID == "" {
+		return fmt.Errorf("%w: 'id' is empty", ErrInvalidRequest)
+	}
+
+	return nil
+}
+
+func (r *ReadIDRequest) id() string {
+	return r.ID
 }
