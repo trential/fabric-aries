@@ -209,7 +209,7 @@ func handleReadIDRequest(stub shim.ChaincodeStubInterface, operation map[string]
 	}
 	logger.Debugf(`
 	handleReadIDRequest:
-							id=%s`, req.ID)
+						id=%s`, req.ID)
 	raw, err := stub.GetState(req.id())
 	if err != nil {
 		return nil, fmt.Errorf("%w: read transaction", ErrWorldstateRead)
@@ -253,10 +253,7 @@ func getTxType(typ interface{}) (TX_TYPE, error) {
 	txp := TX_TYPE(tp)
 	if !(txp == NYM_TX ||
 		txp == SCHEMA_TX ||
-		txp == CRED_DEF_TX ||
-		txp == READ_NYM_TX || // read transactions
-		txp == READ_SCHEMA_TX ||
-		txp == READ_CRED_DEF_TX) {
+		txp == CRED_DEF_TX) {
 		return txp, fmt.Errorf("%w: tx type not supported", ErrInvalidRequest)
 	}
 	return txp, nil

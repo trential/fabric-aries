@@ -21,11 +21,6 @@ type Request struct {
 	Signature  string                 `json:"signature"`
 }
 
-const (
-	READ_NYM_TX      TX_TYPE = "99"
-	READ_SCHEMA_TX   TX_TYPE = "201"
-	READ_CRED_DEF_TX TX_TYPE = "202"
-)
 
 type ReadRequest struct {
 	Type      TX_TYPE                `json:"type"`
@@ -171,7 +166,8 @@ func (r *CredentialDefinitionRequest) id(caller string) string {
 
 //
 type ReadIDRequest struct {
-	ID string `json:"id"`
+	ID   string  `json:"id"`
+	Type TX_TYPE `json:"type"`
 }
 
 func (r *ReadIDRequest) from(operation map[string]interface{}) error {

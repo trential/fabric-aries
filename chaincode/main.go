@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/hyperledger/fabric-chaincode-go/shim"
-	"github.com/hyperledger/fabric-protos-go/peer"
 	pb "github.com/hyperledger/fabric-protos-go/peer"
 )
 
@@ -65,25 +64,26 @@ func (SSIChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	case "read":
 		op = READ_RESPONSE_TYPE
 		if len(args) != 1 {
-			err = fmt.Errorf("%w: require one argument(readLedgerRequest)", ErrInvalidRequest)
+			err = fmt.Errorf("%w: require one argument(singedLedgerRequest)", ErrInvalidRequest)
 			break
 		}
-		logger.Debug("unmarshal ReadRequest")
-		var req ReadRequest
+		logger.Debug("unmarshal SignedRequestLedger")
+		var req Request
 		err = json.Unmarshal([]byte(args[0]), &req)
 		if err != nil {
-			err = fmt.Errorf("%w: invalid read request: %v", ErrInvalidRequest, err)
-			break
-		}
-		logger.Debug("get tx type of read request")
-		txType, err = getTxType(string(req.Type))
-		if err != nil {
+			err = fmt.Errorf("%w: invalid ledger request: %v", ErrInvalidRequest, err)
 			break
 		}
 		if req.Operation == nil {
 			err = fmt.Errorf("%w: operation is empty", ErrInvalidRequest)
 			break
 		}
+		logger.Debug("get tx type from operation")
+		txType, err = getTxType(req.Operation["type"])
+		if err != nil {
+			break
+		}
+
 		data, err = read(stub, txType, req.Operation)
 	case "write":
 		op = WRITE_RESPONSE_TYPE
@@ -128,7 +128,7 @@ func (SSIChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 			Reason:     err.Error(),
 		})
 		logger.Info(string(raw))
-		return peer.Response{
+		return pb.Response{
 			Status:  shim.ERROR,
 			Payload: raw,
 		}
@@ -162,7 +162,7 @@ func read(stub shim.ChaincodeStubInterface, txType TX_TYPE, operation map[string
 	var data interface{}
 	var err error
 	switch txType {
-	case READ_NYM_TX, READ_SCHEMA_TX, READ_CRED_DEF_TX:
+	case NYM_TX, SCHEMA_TX, CRED_DEF_TX:
 		data, err = handleReadIDRequest(stub, operation)
 	default:
 		err = fmt.Errorf("%w: tx type not supported", ErrInvalidRequest)
