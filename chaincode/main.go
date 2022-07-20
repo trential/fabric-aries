@@ -68,23 +68,19 @@ func (SSIChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 			break
 		}
 		logger.Debug("unmarshal SignedRequestLedger")
-		var req Request
+		var req ReadRequest
 		err = json.Unmarshal([]byte(args[0]), &req)
 		if err != nil {
 			err = fmt.Errorf("%w: invalid ledger request: %v", ErrInvalidRequest, err)
 			break
 		}
-		if req.Operation == nil {
-			err = fmt.Errorf("%w: operation is empty", ErrInvalidRequest)
-			break
-		}
 		logger.Debug("get tx type from operation")
-		txType, err = getTxType(req.Operation["type"])
+		txType, err = getTxType(string(req.Type))
 		if err != nil {
 			break
 		}
 
-		data, err = read(stub, txType, req.Operation)
+		data, err = read(stub, txType, args[0])
 	case "write":
 		op = WRITE_RESPONSE_TYPE
 		if len(args) != 1 {
@@ -158,7 +154,7 @@ func write(stub shim.ChaincodeStubInterface, txType TX_TYPE, caller *Nym, operat
 	return data, err
 }
 
-func read(stub shim.ChaincodeStubInterface, txType TX_TYPE, operation map[string]interface{}) (interface{}, error) {
+func read(stub shim.ChaincodeStubInterface, txType TX_TYPE, operation string) (interface{}, error) {
 	var data interface{}
 	var err error
 	switch txType {
@@ -169,5 +165,4 @@ func read(stub shim.ChaincodeStubInterface, txType TX_TYPE, operation map[string
 	}
 
 	return data, err
-
 }

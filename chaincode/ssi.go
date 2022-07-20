@@ -201,7 +201,7 @@ func handleUpdateCredentialDefinitionTx(stub shim.ChaincodeStubInterface, caller
 
 }
 
-func handleReadIDRequest(stub shim.ChaincodeStubInterface, operation map[string]interface{}) (interface{}, error) {
+func handleReadIDRequest(stub shim.ChaincodeStubInterface, operation string) (interface{}, error) {
 	var req ReadIDRequest
 	err := req.from(operation)
 	if err != nil {

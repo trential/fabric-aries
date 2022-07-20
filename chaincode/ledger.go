@@ -21,10 +21,8 @@ type Request struct {
 	Signature  string                 `json:"signature"`
 }
 
-
 type ReadRequest struct {
-	Type      TX_TYPE                `json:"type"`
-	Operation map[string]interface{} `json:"operation"`
+	Type TX_TYPE `json:"type"`
 }
 
 type NYM_ROLE_REQ string
@@ -166,13 +164,11 @@ func (r *CredentialDefinitionRequest) id(caller string) string {
 
 //
 type ReadIDRequest struct {
-	ID   string  `json:"id"`
-	Type TX_TYPE `json:"type"`
+	ID string `json:"id"`
 }
 
-func (r *ReadIDRequest) from(operation map[string]interface{}) error {
-	raw, _ := json.Marshal(operation)
-	err := json.Unmarshal(raw, r)
+func (r *ReadIDRequest) from(operation string) error {
+	err := json.Unmarshal([]byte(operation), r)
 	if err != nil {
 		return err
 	}
