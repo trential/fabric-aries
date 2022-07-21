@@ -1,0 +1,35 @@
+{
+  "name": "aries-fabric-demo",
+  "version": "1.0.0",
+  "description": "Alice Faber demo using Hyperledger Fabric and Aries",
+  "scripts": {
+    "alice": "ts-node src/AliceInquirer.ts",
+    "faber": "ts-node src/FaberInquirer.ts",
+    "refresh": "rm -rf ./node_modules ./yarn.lock && yarn"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/crubn/fabric-aries.git",
+    "directory": "demo/"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/crubn/aries-framework-javascript/issues"
+  },
+  "homepage": "https://github.com/crubn/aries-framework-javascript#readme",
+  "devDependencies": {
+    "@aries-framework/core": "npm:@crubn/aries-framework-core@0.1.0",
+    "@aries-framework/node": "npm:@crubn/aries-framework-node@0.1.0",
+    "@types/figlet": "^1.5.4",
+    "@types/inquirer": "^8.1.3",
+    "clear": "^0.1.0",
+    "commander": "^8.3.0",
+    "figlet": "^1.5.2",
+    "ts-node": "^10.4.0",
+    "typescript": "^4.7.4"
+  },
+  "dependencies": {
+    "inquirer": "^7.3.3"
+  }
+}
