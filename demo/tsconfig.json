@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "types": ["node"],
+    "module": "commonjs",
+    "target": "ES2017",
+    "declaration": true,
+    "sourceMap": true,
+    "strict": true,
+    "noEmitOnError": true,
+    "lib": [],
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  }
+}

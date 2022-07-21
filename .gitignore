@@ -5,3 +5,7 @@ organizations
 artifacts
 *.tar.gz
 *.block
+node_modules
+.wallet*
+yarn.lock
+package-lock.json
